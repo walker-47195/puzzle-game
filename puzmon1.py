@@ -27,16 +27,32 @@ def main():
     player=input('プレイヤー名を入力してください>>')
     print('*** Puzzle & Monsters ***')
     knock_down = go_dungeon(player)
-    print('*** GAME CLERED!! ***')
-    
-    print(f'倒したモンスター数={knock_down}')
+    if knock_down==5:
+        print('*** GAME CLERED!! ***')
+        print(f'倒したモンスター数={knock_down}')
+    else:
+        print('*** GAME OVER!! ***')
+        print(f'倒したモンスター数={knock_down}')
 
 def go_dungeon(player):
+    monsters=['スライム','ゴブリン','オオコウモリ','ウェアウルフ','ドラゴン']
+    knock_down=0
     print(f'{player}はダンジョンに到達した')
+    for i in monsters:
+        is_win=do_battle(i)
+        if is_win==1:
+            knock_down += 1
+        print(is_win)
     print(f'{player}はダンジョンを制覇した')
-    knock_down=5
     return knock_down
+
+def do_battle(monster_name):
+    print(f'{monster_name}が現れた！')
+    print(f'{monster_name}を倒した！')
+    flag=1
+    return flag
 
 
 # main関数の呼び出し
+
 main()
