@@ -21,12 +21,71 @@
 # インポート
 
 # グローバル変数の宣言
+ELEMENT_SYMBOLS = {
+    '火':'$',
+    '水':'~',
+    '風':'@',
+    '土':'#',
+    '命':'&',
+    '無':''
+}
+ELEMENT_COLORS = {
+    '火':'1',
+    '水':'6',
+    '風':'2',
+    '土':'3',
+    '命':'5',
+    '無':'7'
+}
 
 # 関数宣言
 def main():
     player=input('プレイヤー名を入力してください>>')
     print('*** Puzzle & Monsters ***')
-    knock_down = go_dungeon(player)
+
+    slime = {
+        'name':'スライム',
+        'hp':100,
+        'max_hp':100,
+        'element':'水',
+        'ap':10,
+        'dp':1
+    }
+    goblin = {
+        'name':'ゴブリン',
+        'hp':200,
+        'max_hp':200,
+        'element':'土',
+        'ap':20,
+        'dp':5
+    }
+    bigbat = {
+        'name':'オオコウモリ',
+        'hp':300,
+        'max_hp':300,
+        'element':'風',
+        'ap':30,
+        'dp':10
+    }
+    werewolf = {
+        'name':'ウェアウルフ',
+        'hp':400,
+        'max_hp':400,
+        'element':'風',
+        'ap':40,
+        'dp':15
+    }
+    doragon = {
+        'name':'ドラゴン',
+        'hp':600,
+        'max_hp':600,
+        'element':'火',
+        'ap':50,
+        'dp':20
+    }
+    monsters_list=[slime,goblin,bigbat,werewolf,doragon]
+  
+    knock_down = go_dungeon(player,monsters_list)
     if knock_down==5:
         print('*** GAME CLERED!! ***')
         print(f'倒したモンスター数={knock_down}')
@@ -34,8 +93,8 @@ def main():
         print('*** GAME OVER!! ***')
         print(f'倒したモンスター数={knock_down}')
 
-def go_dungeon(player):
-    monsters=['スライム','ゴブリン','オオコウモリ','ウェアウルフ','ドラゴン']
+def go_dungeon(player,monsters):
+    # monsters=['スライム','ゴブリン','オオコウモリ','ウェアウルフ','ドラゴン']
     knock_down=0
     print(f'{player}はダンジョンに到達した')
     for i in monsters:
@@ -46,13 +105,23 @@ def go_dungeon(player):
     print(f'{player}はダンジョンを制覇した')
     return knock_down
 
-def do_battle(monster_name):
-    print(f'{monster_name}が現れた！')
-    print(f'{monster_name}を倒した！')
+def do_battle(monster):
+    print_monster_name(monster)
+    print('が現れた！')
+
+    print_monster_name(monster)
+    print('を倒した！')
     flag=1
     return flag
 
+def print_monster_name(monster):
+    monster_name=monster['name']
+    symbol=ELEMENT_SYMBOLS[monster['element']]
+    color=ELEMENT_COLORS[monster['element']]
+
+    print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
 # main関数の呼び出し
 
 main()
+
