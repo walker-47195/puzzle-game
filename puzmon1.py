@@ -43,6 +43,7 @@ def main():
     player=input('プレイヤー名を入力してください>>')
     print('*** Puzzle & Monsters ***')
 
+  # 敵モンスターの生成
     slime = {
         'name':'スライム',
         'hp':100,
@@ -84,6 +85,43 @@ def main():
         'dp':20
     }
     monsters_list=[slime,goblin,bigbat,werewolf,doragon]
+
+# 味方モンスターの生成
+    seiryu = {
+        'name':'青龍',
+        'hp':150,
+        'max_hp':150,
+        'element':'風',
+        'ap':15,
+        'dp':10
+    }
+    suzaku = {
+        'name':'朱雀',
+        'hp':150,
+        'max_hp':150,
+        'element':'火',
+        'ap':25,
+        'dp':10
+    }
+    byakko = {
+        'name':'白虎',
+        'hp':150,
+        'max_hp':150,
+        'element':'土',
+        'ap':20,
+        'dp':5
+    }
+    genbu = {
+        'name':'玄武',
+        'hp':150,
+        'max_hp':150,
+        'element':'水',
+        'ap':20,
+        'dp':15
+    }
+    friends=[seiryu,suzaku,byakko,genbu]
+    party=organize_party(player,friends)
+    print(party)
   
     knock_down = go_dungeon(player,monsters_list)
     if knock_down==5:
@@ -111,6 +149,7 @@ def do_battle(monster):
 
     print_monster_name(monster)
     print('を倒した！')
+  
     flag=1
     return flag
 
@@ -121,7 +160,27 @@ def print_monster_name(monster):
 
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
+def organize_party(player_name,friends):
+    max_hp=0
+    max_dp=0
+    for i in friends:
+        max_hp += i['max_hp']
+        max_dp += i['dp']
+    
+    ave_dp=max_dp/len(friends)
+
+    friends_party={
+        'name': player_name,
+        'party' : friends,
+        'HP':max_hp,
+        '最大HP':max_hp,
+        '防御':ave_dp
+    }
+    
+    return friends_party
+
 # main関数の呼び出し
 
 main()
+
 
