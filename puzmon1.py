@@ -125,32 +125,54 @@ def main():
   
     knock_down = go_dungeon(player,monsters_list)
     if knock_down==5:
-        print('*** GAME CLERED!! ***')
+        print('*** GAME CLEARED!! ***')
         print(f'倒したモンスター数={knock_down}')
     else:
         print('*** GAME OVER!! ***')
         print(f'倒したモンスター数={knock_down}')
 
 def go_dungeon(player,monsters):
-    # monsters=['スライム','ゴブリン','オオコウモリ','ウェアウルフ','ドラゴン']
+    
     knock_down=0
-    print(f'{player}はダンジョンに到達した')
+    print(f"{party['name']}のパーティ（HP={party['最大HP']}）はダンジョンに到達した")
+
+    print()
+    show_party(party)
+    print()
+  
     for i in monsters:
-        is_win=do_battle(i)
+        is_win=do_battle(party,i)
         if is_win==1:
             knock_down += 1
-        print(is_win)
-    print(f'{player}はダンジョンを制覇した')
+            print(f"{party['name']}はさらに奥へと進んだ")
+            print(is_win)
+        else:
+            print(f"{party['name']}はダンジョンから逃げ出した")
+            break
+
+    if knock_down == 5:
+        print(f'{player}はダンジョンを制覇した')
     return knock_down
 
-def do_battle(monster):
+def do_battle(party,monster):
     print_monster_name(monster)
     print('が現れた！')
+    while True:
 
-    print_monster_name(monster)
-    print('を倒した！')
-  
-    flag=1
+        on_player_turn(party,monster)
+
+        if monster['hp'] <= 0:
+            print_monster_name(monster)
+            print('を倒した！')
+            flag = 1
+            break
+
+        on_enemy_turn(party,monster)
+        
+        if party['HP'] <= 0:
+            flag = 0
+            break
+
     return flag
 
 def print_monster_name(monster):
@@ -161,9 +183,11 @@ def print_monster_name(monster):
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
 def organize_party(player_name,friends):
+    hp=0
     max_hp=0
     max_dp=0
     for i in friends:
+        hp += i['hp']
         max_hp += i['max_hp']
         max_dp += i['dp']
     
@@ -172,15 +196,51 @@ def organize_party(player_name,friends):
     friends_party={
         'name': player_name,
         'party' : friends,
-        'HP':max_hp,
+        'HP':hp,
         '最大HP':max_hp,
         '防御':ave_dp
     }
     
     return friends_party
 
+def show_party(party):
+    print('＜パーティ編成＞')
+    for i in party['my_party']:
+        my_monster=print_monster_name(i)
+        print(f"{my_monster} HP={i['hp']} 攻撃={i['ap']} 防御={i['dp']}")
+
+def on_player_turn(my_party,monster):
+    print(f"【{my_party['name']}のターン】（HP={my_party['HP']}）")
+    damege=do_attack(monster)
+    print(f"{damege}のダメージを与えた！")
+
+
+def on_enemy_turn(my_party,monster):
+    print(f"【{monster['name']}のターン】（HP={monster['hp']}）")
+    damege=do_enemy_attack(my_party)
+    print(f"{damege}のダメージを受けた！")
+
+def do_attack(monster):
+    main_damege=100
+    r = random.uniform(-10,10)
+    
+    damege = int(main_damege*(1+r/100))
+
+    print(monster['hp'])
+    monster['hp']=monster['hp']-damege
+    print(monster['hp'])
+    return damege
+
+def do_enemy_attack(my_party):
+    damege=200
+    print(my_party['HP'])
+    my_party['HP']=my_party['HP']-damege
+    print(my_party['HP'])
+    return damege
+
 # main関数の呼び出し
 
 main()
+
 
 
