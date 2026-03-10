@@ -19,6 +19,7 @@
 # 作成開始日：2026/02/17　作成者：平島　隼平
 
 # インポート
+import random
 
 # グローバル変数の宣言
 ELEMENT_SYMBOLS = {
@@ -36,6 +37,13 @@ ELEMENT_COLORS = {
     '土':'3',
     '命':'5',
     '無':'7'
+}
+ELEMENT_NUMBER = {
+    0:'$',
+    1:'~',
+    2:'@',
+    3:'#',
+    4:'&'
 }
 
 # 関数宣言
@@ -121,7 +129,6 @@ def main():
     }
     friends=[seiryu,suzaku,byakko,genbu]
     party=organize_party(player,friends)
-    print(party)
   
     knock_down = go_dungeon(player,monsters_list)
     if knock_down==5:
@@ -131,7 +138,7 @@ def main():
         print('*** GAME OVER!! ***')
         print(f'倒したモンスター数={knock_down}')
 
-def go_dungeon(player,monsters):
+def go_dungeon(party,monsters):
     
     knock_down=0
     print(f"{party['name']}のパーティ（HP={party['最大HP']}）はダンジョンに到達した")
@@ -151,15 +158,15 @@ def go_dungeon(player,monsters):
             break
 
     if knock_down == 5:
-        print(f'{player}はダンジョンを制覇した')
+        print(f'{party['name']}はダンジョンを制覇した')
     return knock_down
 
 def do_battle(party,monster):
     print_monster_name(monster)
     print('が現れた！')
+    label,element = fill_gems()
     while True:
-
-        on_player_turn(party,monster)
+        on_player_turn(party,monster,label,element)
 
         if monster['hp'] <= 0:
             print_monster_name(monster)
@@ -195,7 +202,7 @@ def organize_party(player_name,friends):
 
     friends_party={
         'name': player_name,
-        'party' : friends,
+        'my_party' : friends,
         'HP':hp,
         '最大HP':max_hp,
         '防御':ave_dp
@@ -206,11 +213,13 @@ def organize_party(player_name,friends):
 def show_party(party):
     print('＜パーティ編成＞')
     for i in party['my_party']:
-        my_monster=print_monster_name(i)
-        print(f"{my_monster} HP={i['hp']} 攻撃={i['ap']} 防御={i['dp']}")
+        print_monster_name(i)
+        print(f"{ HP={i['hp']} 攻撃={i['ap']} 防御={i['dp']}")
 
-def on_player_turn(my_party,monster):
+def on_player_turn(my_party,monster,label,element):
     print(f"【{my_party['name']}のターン】（HP={my_party['HP']}）")
+    show_battle_field(monster,my_party,label,element)
+    com = check_valid_command(label)
     damege=do_attack(monster)
     print(f"{damege}のダメージを与えた！")
 
@@ -238,9 +247,80 @@ def do_enemy_attack(my_party):
     print(my_party['HP'])
     return damege
 
+def show_battle_field(monster,my_party,label,element):
+    print("バトルフィールド")
+    print_monster_name(monster)
+    print(f"HP= {monster['hp']}/{monster['max_hp']}")
+    for i in my_party['my_party']:
+        print_monster_name(i)
+    print("")
+    print(f"HP = {my_party['HP']}/{my_party['最大HP']}")
+
+    print_gems(label,element)
+    
+
+def fill_gems():
+    gems = []
+    for i in range(14):
+        gems.append(random.randint(0,4))
+    # print(gems)
+
+    element = []
+    for num in gems:
+        element.append(ELEMENT_NUMBER[num])
+    # print(element)
+    label=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+    # gems_set = dict(zip(label,element))
+    # print(gems_set)
+    gems_set = (label,element)
+    return gems_set
+
+def print_gems(label,element):
+    print(label)
+    print(element)
+
+def check_valid_command(label):
+    while True:
+        com=input("コマンド入力>>")
+        if len(com) != 2:
+            print("2文字でコマンドを入力してください")
+            continue
+        for i in com:
+            if i not in label:
+                continue
+        if is_unique(com) == False:
+            continue
+        return com
+
+def move_gem(com,label,element):
+    l_index = label.index(com[0])
+    r_index = label.index(com[1])
+
+    swap_gem(element,l_index,r_index)
+
+def swap_gem(element,l_index,r_index):
+    r = r_index-l_index
+    for i in range(abs(r)):
+        if r > 0:
+            element[l_index+i], element[l_index+1+i] = element[l_index+1+i], element[l_index+i]
+            print(element)
+        else:
+            element[l_index-1-i], element[l_index-i] = element[l_index-i], element[l_index-1-i]
+            print(element)
+
+
+def is_unique(s):
+    seen = []
+    for char in s:
+        if char in seen:
+            return False
+        seen.append(char)
+    return True
+
 # main関数の呼び出し
 
 main()
+
 
 
 
