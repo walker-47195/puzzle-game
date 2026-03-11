@@ -28,7 +28,7 @@ ELEMENT_SYMBOLS = {
     '風':'@',
     '土':'#',
     '命':'&',
-    '無':''
+    '無':' '
 }
 ELEMENT_COLORS = {
     '火':'1',
@@ -47,11 +47,13 @@ ELEMENT_NUMBER = {
 }
 
 # 関数宣言
+
+# メイン関数
 def main():
     player=input('プレイヤー名を入力してください>>')
     print('*** Puzzle & Monsters ***')
 
-  # 敵モンスターの生成
+    # 敵モンスターの生成
     slime = {
         'name':'スライム',
         'hp':100,
@@ -94,7 +96,7 @@ def main():
     }
     monsters_list=[slime,goblin,bigbat,werewolf,doragon]
 
-# 味方モンスターの生成
+    # 味方モンスターの生成
     seiryu = {
         'name':'青龍',
         'hp':150,
@@ -130,7 +132,7 @@ def main():
     friends=[seiryu,suzaku,byakko,genbu]
     party=organize_party(player,friends)
   
-    knock_down = go_dungeon(player,monsters_list)
+    knock_down = go_dungeon(party,monsters_list)
     if knock_down==5:
         print('*** GAME CLEARED!! ***')
         print(f'倒したモンスター数={knock_down}')
@@ -138,6 +140,7 @@ def main():
         print('*** GAME OVER!! ***')
         print(f'倒したモンスター数={knock_down}')
 
+# ダンジョンでの動作
 def go_dungeon(party,monsters):
     
     knock_down=0
@@ -161,6 +164,7 @@ def go_dungeon(party,monsters):
         print(f'{party['name']}はダンジョンを制覇した')
     return knock_down
 
+# バトルをする
 def do_battle(party,monster):
     print_monster_name(monster)
     print('が現れた！')
@@ -182,6 +186,7 @@ def do_battle(party,monster):
 
     return flag
 
+# モンスター名を属性付きで表示
 def print_monster_name(monster):
     monster_name=monster['name']
     symbol=ELEMENT_SYMBOLS[monster['element']]
@@ -189,6 +194,7 @@ def print_monster_name(monster):
 
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
+# 味方パーティの作成
 def organize_party(player_name,friends):
     hp=0
     max_hp=0
@@ -198,7 +204,7 @@ def organize_party(player_name,friends):
         max_hp += i['max_hp']
         max_dp += i['dp']
     
-    ave_dp=max_dp/len(friends)
+    ave_dp=int(max_dp/len(friends))
 
     friends_party={
         'name': player_name,
@@ -210,25 +216,35 @@ def organize_party(player_name,friends):
     
     return friends_party
 
+# パーティを表示
 def show_party(party):
     print('＜パーティ編成＞')
     for i in party['my_party']:
         print_monster_name(i)
         print(f"{ HP={i['hp']} 攻撃={i['ap']} 防御={i['dp']}")
 
+# プレイヤーのターン
 def on_player_turn(my_party,monster,label,element):
     print(f"【{my_party['name']}のターン】（HP={my_party['HP']}）")
+    
     show_battle_field(monster,my_party,label,element)
     com = check_valid_command(label)
+    move_gem(com,label,element)
+    last_num,count = check_banishable(element)
+    if count >= 3:
+        banish_gems(element,last_num,count)
+        shift_gems(element,last_num,count)
+        spawn_gems(element,count)
     damege=do_attack(monster)
     print(f"{damege}のダメージを与えた！")
 
-
+# 敵モンスターのターン
 def on_enemy_turn(my_party,monster):
     print(f"【{monster['name']}のターン】（HP={monster['hp']}）")
     damege=do_enemy_attack(my_party)
     print(f"{damege}のダメージを受けた！")
 
+# 敵モンスターへのダメージを管理
 def do_attack(monster):
     main_damege=100
     r = random.uniform(-10,10)
@@ -240,6 +256,7 @@ def do_attack(monster):
     print(monster['hp'])
     return damege
 
+# 敵モンスターの攻撃を管理
 def do_enemy_attack(my_party):
     damege=200
     print(my_party['HP'])
@@ -247,6 +264,7 @@ def do_enemy_attack(my_party):
     print(my_party['HP'])
     return damege
 
+# バトルフィールドを生成
 def show_battle_field(monster,my_party,label,element):
     print("バトルフィールド")
     print_monster_name(monster)
@@ -258,7 +276,7 @@ def show_battle_field(monster,my_party,label,element):
 
     print_gems(label,element)
     
-
+# 宝石を生成
 def fill_gems():
     gems = []
     for i in range(14):
@@ -272,32 +290,40 @@ def fill_gems():
     label=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
     # gems_set = dict(zip(label,element))
     # print(gems_set)
-    gems_set = (label,element)
-    return gems_set
+    return label,element
 
+# 宝石を表示
 def print_gems(label,element):
     print(label)
     print(element)
 
+# 入力されたコマンドを確認
 def check_valid_command(label):
     while True:
         com=input("コマンド入力>>")
+      
         if len(com) != 2:
             print("2文字でコマンドを入力してください")
             continue
-        for i in com:
-            if i not in label:
-                continue
-        if is_unique(com) == False:
+          
+        if com[0] not in label or com[1] not in label:
+            print("A～Nで入力してください")
             continue
+          
+        if is_unique(com) == False:
+            print("同じ文字は使えません")
+            continue
+          
         return com
 
+# 動かす宝石のインデックスを確認
 def move_gem(com,label,element):
     l_index = label.index(com[0])
     r_index = label.index(com[1])
 
     swap_gem(element,l_index,r_index)
 
+# 宝石を移動させる
 def swap_gem(element,l_index,r_index):
     r = r_index-l_index
     for i in range(abs(r)):
@@ -308,7 +334,7 @@ def swap_gem(element,l_index,r_index):
             element[l_index-1-i], element[l_index-i] = element[l_index-i], element[l_index-1-i]
             print(element)
 
-
+# コマンドに同じ文字がないか確認する
 def is_unique(s):
     seen = []
     for char in s:
@@ -317,9 +343,51 @@ def is_unique(s):
         seen.append(char)
     return True
 
-# main関数の呼び出し
+# 宝石の並びを調べて消去可能な個所を検索して返す
+def check_banishable(element):
+    count = 1
+    last_num = 0
+    for i in range(1,len(element)):
+        if element[i] == element[i-1]:
+            count += 1
+        else:
+            if count >= 3:
+                print(element[i-1],"match",count)
+                last_num = i-1
+                print(last_num)
+                return last_num,count
+            else:
+                count = 1
 
+    if count >= 3:
+        print(element[-1],"match",count)
+        last_num = len(element)-1
+        print(last_num)
+        return last_num,count
+    return last_num,count
+
+# 消去可能な宝石を確認し消去する(実際にリストから消去して宝石を追加する方法のほうが短くなる可能性あり)
+def banish_gems(element,last_num,count):
+    for i in range(count):
+        element[last_num-i] = " "
+    print(element)
+
+# 空スロットの右側に並ぶ宝石を左詰めする
+def shift_gems(element,last_num,count):
+    for x in range(count):
+        for i in range(len(element)-last_num-1):
+            element[last_num+i], element[last_num+1+i] = element[last_num+1+i], element[last_num+i]
+        last_num -= 1
+
+# 空スロットにランダムな宝石を生成する
+def spawn_gems(element,count):
+    for i in range(count):
+        element[-1-i] = ELEMENT_NUMBER[random.randint(0,4)]
+    print(element)
+  
+# main関数の呼び出し
 main()
+
 
 
 
