@@ -117,20 +117,28 @@ def main():
     monsters_list=[slime,goblin,bigbat,werewolf,doragon]
 
     # 味方モンスターの生成
-    seiryu = {
-        'name':'青龍',
-        'hp':150,
-        'max_hp':150,
-        'element':'風',
-        'ap':15,
-        'dp':10
-    }
     suzaku = {
         'name':'朱雀',
         'hp':150,
         'max_hp':150,
         'element':'火',
         'ap':25,
+        'dp':10
+    }
+    genbu = {
+        'name':'玄武',
+        'hp':150,
+        'max_hp':150,
+        'element':'水',
+        'ap':20,
+        'dp':15
+    }
+    seiryu = {
+        'name':'青龍',
+        'hp':150,
+        'max_hp':150,
+        'element':'風',
+        'ap':15,
         'dp':10
     }
     byakko = {
@@ -141,14 +149,7 @@ def main():
         'ap':20,
         'dp':5
     }
-    genbu = {
-        'name':'玄武',
-        'hp':150,
-        'max_hp':150,
-        'element':'水',
-        'ap':20,
-        'dp':15
-    }
+    
     friends=[suzaku,genbu,seiryu,byakko]
     party=organize_party(player,friends)
 
@@ -248,21 +249,8 @@ def on_player_turn(party,monster,label,element):
     print(f"【{party['name']}のターン】（HP={party['HP']}）")
     
     show_battle_field(monster,party,label,element)
-    com = check_valid_command(label)
-    move_gem(com,label,element)
-    last_num,count = check_banishable(element)
     
-    if count >= 3:
-        attack_element = element[last_num]
-        banish_gems(element,last_num,count)
-        shift_gems(element,last_num,count)
-        spawn_gems(element,count)
-        if attack_element == '&':
-            recover = do_recover(party)
-            print(f"{party['name']}は{recover}回復した！")
-        else:
-            damege=do_attack(party,monster,attack_element)
-            print(f"{damege}のダメージを与えた！")
+    all_attack(party,monster,label,element)
 
 # 敵モンスターのターン
 def on_enemy_turn(party,monster):
@@ -271,12 +259,12 @@ def on_enemy_turn(party,monster):
     print(f"{damege}のダメージを受けた！")
 
 # 敵モンスターへのダメージを管理
-def do_attack(party,monster,attack_element):
+def do_attack(party,monster,attack_element,mag):
     attack_mons,element_name = attack_monster(attack_element)
     
     main_damege = party['my_party'][attack_mons]['ap'] - monster['dp']
     element_damege = main_damege * ELEMENT_BOOST[element_name + monster['element']]
-    conbo_damege = element_damege
+    conbo_damege = element_damege * mag
     blur = blur_damage()
     
     damege = int(conbo_damege*blur)
@@ -427,8 +415,8 @@ def blur_damage():
     return blur
 
 # '命'の属性で回復する
-def do_recover(party):
-    recover = int(20 + blur_damage())
+def do_recover(party,mag):
+    recover = int(20*mag + blur_damage())
     party['HP'] += recover
     if party['HP'] > party['最大HP']:
         party['HP'] = party['最大HP']
@@ -452,6 +440,36 @@ def attack_monster(attack_element):
             attack_mons = 3
             element_name = '土'
     return attack_mons,element_name
+
+# 1回の攻撃をまとめて処理する
+def all_attack(party,monster,label,element):
+    combo = 1
+    count = 0
+    com = check_valid_command(label)
+    move_gem(com,label,element)
+    while True:
+        last_num,count = check_banishable(element)
+        mag = combo_magnification(count,combo)
+        if count >= 3:
+            attack_element = element[last_num]
+            banish_gems(element,last_num,count)
+            shift_gems(element,last_num,count)
+            spawn_gems(element,count)
+            if attack_element == '&':
+                recover = do_recover(party,mag)
+                print(f"{party['name']}は{recover}回復した！")
+            else:
+                if combo >= 2:
+                    print(f"{combo}COMBO!")
+                damege=do_attack(party,monster,attack_element,mag)
+                print(f"{damege}のダメージを与えた！")
+            combo += 1
+        else:
+            break
+        
+# コンボ補正
+def combo_magnification(count,combo):
+    return 1.5**(count -3 + combo)
 
 # main関数の呼び出し
 main()
