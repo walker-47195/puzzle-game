@@ -70,8 +70,10 @@ ELEMENT_BOOST = {
 
 # メイン関数
 def main():
-    player=input('プレイヤー名を入力してください>>')
+    player = input('プレイヤー名を入力してください>>')
+    print("")
     print('*** Puzzle & Monsters ***')
+    print("")
 
     # 敵モンスターの生成
     slime = {
@@ -122,7 +124,7 @@ def main():
         'hp':150,
         'max_hp':150,
         'element':'火',
-        'ap':25,
+        'ap':50,
         'dp':10
     }
     genbu = {
@@ -130,7 +132,7 @@ def main():
         'hp':150,
         'max_hp':150,
         'element':'水',
-        'ap':20,
+        'ap':40,
         'dp':15
     }
     seiryu = {
@@ -138,7 +140,7 @@ def main():
         'hp':150,
         'max_hp':150,
         'element':'風',
-        'ap':15,
+        'ap':30,
         'dp':10
     }
     byakko = {
@@ -146,37 +148,59 @@ def main():
         'hp':150,
         'max_hp':150,
         'element':'土',
-        'ap':20,
+        'ap':40,
         'dp':5
     }
     
-    friends=[suzaku,genbu,seiryu,byakko]
-    party=organize_party(player,friends)
+    friends = [suzaku,genbu,seiryu,byakko]
+
+    party = organize_party(player,friends)
 
     knock_down = go_dungeon(party,monsters_list)
-    if knock_down==5:
+    if knock_down == 5:
         print('*** GAME CLEARED!! ***')
         print(f'倒したモンスター数={knock_down}')
     else:
         print('*** GAME OVER!! ***')
         print(f'倒したモンスター数={knock_down}')
 
+# 味方パーティの作成
+def organize_party(player_name,friends):
+    hp = 0
+    max_hp = 0
+    max_dp = 0
+    for i in friends:
+        hp += i['hp']
+        max_hp += i['max_hp']
+        max_dp += i['dp']
+    
+    ave_dp = int(max_dp/len(friends))
+
+    party = {
+        'name':player_name,
+        'my_monsters':friends,
+        'HP':hp,
+        'MAX_HP':max_hp,
+        'DP':ave_dp
+    }
+    
+    return party
+
 # ダンジョンでの動作
 def go_dungeon(party,monsters):
 
     knock_down=0
-    print(f"{party['name']}のパーティ（HP={party['最大HP']}）はダンジョンに到達した")
+    print(f"{party['name']}のパーティ（HP={party['MAX_HP']}）はダンジョンに到達した")
     
     print()
     show_party(party)
     print()
 
     for i in monsters:
-        is_win=do_battle(party,i)
-        if is_win==1:
+        is_win = do_battle(party,i)
+        if is_win == 1:
             knock_down += 1
             print(f"{party['name']}はさらに奥へと進んだ")
-            print(is_win)
         else:
             print(f"{party['name']}はダンジョンから逃げ出した")
             break
@@ -185,17 +209,25 @@ def go_dungeon(party,monsters):
         print(f"{party['name']}はダンジョンを制覇した")
     return knock_down
 
+# パーティを表示
+def show_party(party):
+    print('＜パーティ編成＞')
+    for i in party['my_monsters']:
+        print_monster_name(i)
+        print(f" HP={i['hp']} 攻撃={i['ap']} DP={i['dp']}")
+
 # バトルをする
 def do_battle(party,monster):
     print_monster_name(monster)
-    print('が現れた！')
+    print("が現れた！")
+    print("")
     label,element = fill_gems()
     while True:
         on_player_turn(party,monster,label,element)
 
         if monster['hp'] <= 0:
             print_monster_name(monster)
-            print('を倒した！')
+            print("を倒した！")
             flag = 1
             break
 
@@ -209,121 +241,84 @@ def do_battle(party,monster):
 
 # モンスター名を属性付きで表示
 def print_monster_name(monster):
-    monster_name=monster['name']
-    symbol=ELEMENT_SYMBOLS[monster['element']]
-    color=ELEMENT_COLORS[monster['element']]
+    monster_name = monster['name']
+    symbol = ELEMENT_SYMBOLS[monster['element']]
+    color = ELEMENT_COLORS[monster['element']]
 
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
-# 味方パーティの作成
-def organize_party(player_name,friends):
-    hp=0
-    max_hp=0
-    max_dp=0
-    for i in friends:
-        hp += i['hp']
-        max_hp += i['max_hp']
-        max_dp += i['dp']
-    
-    ave_dp=int(max_dp/len(friends))
-
-    friends_party={
-        'name': player_name,
-        'my_party' : friends,
-        'HP':hp,
-        '最大HP':max_hp,
-        '防御':ave_dp
-    }
-    
-    return friends_party
-
-# パーティを表示
-def show_party(party):
-    print('＜パーティ編成＞')
-    for i in party['my_party']:
-        print_monster_name(i)
-        print(f" HP={i['hp']} 攻撃={i['ap']} 防御={i['dp']}")
-
-# プレイヤーのターン
-def on_player_turn(party,monster,label,element):
-    print(f"【{party['name']}のターン】（HP={party['HP']}）")
-    
-    show_battle_field(monster,party,label,element)
-    
-    all_attack(party,monster,label,element)
-
-# 敵モンスターのターン
-def on_enemy_turn(party,monster):
-    print(f"【{monster['name']}のターン】（HP={monster['hp']}）")
-    damege = do_enemy_attack(party,monster)
-    print(f"{damege}のダメージを受けた！")
-
-# 敵モンスターへのダメージを管理
-def do_attack(party,monster,attack_element,mag):
-    attack_mons,element_name = attack_monster(attack_element)
-    
-    main_damege = party['my_party'][attack_mons]['ap'] - monster['dp']
-    element_damege = main_damege * ELEMENT_BOOST[element_name + monster['element']]
-    conbo_damege = element_damege * mag
-    blur = blur_damage()
-    
-    damege = int(conbo_damege*blur)
-    if damege < 0:
-        damege = 1
-
-    print(monster['hp'])
-    monster['hp']=monster['hp']-damege
-    print(monster['hp'])
-    return damege
-
-# 敵モンスターの攻撃を管理
-def do_enemy_attack(party,monster):
-    blur = blur_damage()
-    damege = int((monster['ap'] - party['防御'])*blur)
-    if damege <= 0:
-        damege = 1
-    print(party['HP'])
-    party['HP']=party['HP']-damege
-    print(party['HP'])
-    return damege
-
-# バトルフィールドを生成
-def show_battle_field(monster,my_party,label,element):
-    print("バトルフィールド")
-    print_monster_name(monster)
-    print(f"HP= {monster['hp']}/{monster['max_hp']}")
-    for i in my_party['my_party']:
-        print_monster_name(i)
-    print("")
-    print(f"HP = {my_party['HP']}/{my_party['最大HP']}")
-
-    print_gems(label,element)
-    
 # 宝石を生成
 def fill_gems():
     gems = []
     for i in range(14):
         gems.append(random.randint(0,4))
-    # print(gems)
 
     element = []
     for num in gems:
         element.append(ELEMENT_NUMBER[num])
-    # print(element)
+
     label=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
-    # gems_set = dict(zip(label,element))
-    # print(gems_set)
+
     return label,element
 
-# 宝石を表示
-def print_gems(label,element):
+# プレイヤーのターン
+def on_player_turn(party,monster,label,element):
+    print(f"【{party['name']}のターン】（HP={party['HP']}）")
+    
+    show_battle_field(party,monster,label,element)
+    
+    all_attack(party,monster,label,element)
+
+# バトルフィールドを生成
+def show_battle_field(party,monster,label,element):
+    print("バトルフィールド")
+    print_monster_name(monster)
+    print(f"HP= {monster['hp']}/{monster['max_hp']}")
+    for i in party['my_monsters']:
+        print_monster_name(i)
+    print("")
+    print(f"HP = {party['HP']}/{party['MAX_HP']}")
+
     print(label)
     print(element)
+
+# 1回の攻撃をまとめて処理する
+def all_attack(party,monster,label,element):
+    combo = 1
+    count = 0
+    command = check_valid_command(label)
+    move_gem(command,label,element)
+    while True:
+        last_num,count = check_banishable(element)
+        combo_mag = combo_magnification(count,combo)
+        if count >= 3:
+            attack_element = element[last_num]
+            banish_gems(element,last_num,count)
+            shift_gems(element,last_num,count)
+            spawn_gems(element,count)
+            if combo >= 2:
+                print(f"{combo}COMBO!")
+            if attack_element == '&':
+                recover = do_recover(party,combo_mag)
+                print(f"{party['name']}は{recover}回復した！")
+            else:
+                attack_mons,element_name = attack_monster(attack_element)
+                element_mag = ELEMENT_BOOST[element_name + monster['element']]
+                damage = do_attack(party,monster,attack_mons,element_mag,combo_mag)
+                print(f"{party['my_monsters'][attack_mons]['name']}の攻撃！")
+                if element_mag == 2.0:
+                    print("効果は抜群だ！")
+                elif element_mag == 0.5:
+                    print("効果はいまひとつのようだ...")
+                print(f"{damage}のダメージを与えた！")
+            combo += 1
+        else:
+            break
 
 # 入力されたコマンドを確認
 def check_valid_command(label):
     while True:
-        com=input("コマンド入力>>")
+        com = input("コマンド入力>>")
 
         if len(com) != 2:
             print("2文字でコマンドを入力してください")
@@ -338,6 +333,15 @@ def check_valid_command(label):
             continue
 
         return com
+
+# コマンドに同じ文字がないか確認する
+def is_unique(command):
+    check_box = []
+    for char in command:
+        if char in check_box:
+            return False
+        check_box.append(char)
+    return True
 
 # 動かす宝石のインデックスを確認
 def move_gem(com,label,element):
@@ -357,15 +361,6 @@ def swap_gem(element,l_index,r_index):
             element[l_index-1-i], element[l_index-i] = element[l_index-i], element[l_index-1-i]
             print(element)
 
-# コマンドに同じ文字がないか確認する
-def is_unique(s):
-    seen = []
-    for char in s:
-        if char in seen:
-            return False
-        seen.append(char)
-    return True
-
 # 宝石の並びを調べて消去可能な個所を検索して返す
 def check_banishable(element):
     count = 1
@@ -375,19 +370,19 @@ def check_banishable(element):
             count += 1
         else:
             if count >= 3:
-                print(element[i-1],"match",count)
                 last_num = i-1
-                print(last_num)
                 return last_num,count
             else:
                 count = 1
 
     if count >= 3:
-        print(element[-1],"match",count)
         last_num = len(element)-1
-        print(last_num)
         return last_num,count
     return None,0
+
+# コンボ補正
+def combo_magnification(count,combo):
+    return 1.5**(count -3 + combo)
 
 # 消去可能な宝石を確認し消去する(実際にリストから消去して宝石を追加する方法のほうが短くなる可能性あり)
 def banish_gems(element,last_num,count):
@@ -408,18 +403,12 @@ def spawn_gems(element,count):
         element[-1-i] = ELEMENT_NUMBER[random.randint(0,4)]
     print(element)
 
-# ダメージに乱数を入れる
-def blur_damage():
-    r = random.uniform(-10,10)
-    blur = (1+r/100)
-    return blur
-
 # '命'の属性で回復する
-def do_recover(party,mag):
-    recover = int(20*mag + blur_damage())
+def do_recover(party,combo_mag):
+    recover = int(20 * combo_mag * blur_damage())
     party['HP'] += recover
-    if party['HP'] > party['最大HP']:
-        party['HP'] = party['最大HP']
+    if party['HP'] > party['MAX_HP']:
+        party['HP'] = party['MAX_HP']
     return recover
 
 # 攻撃モンスターを判定する変数を取り出す
@@ -441,35 +430,44 @@ def attack_monster(attack_element):
             element_name = '土'
     return attack_mons,element_name
 
-# 1回の攻撃をまとめて処理する
-def all_attack(party,monster,label,element):
-    combo = 1
-    count = 0
-    com = check_valid_command(label)
-    move_gem(com,label,element)
-    while True:
-        last_num,count = check_banishable(element)
-        mag = combo_magnification(count,combo)
-        if count >= 3:
-            attack_element = element[last_num]
-            banish_gems(element,last_num,count)
-            shift_gems(element,last_num,count)
-            spawn_gems(element,count)
-            if attack_element == '&':
-                recover = do_recover(party,mag)
-                print(f"{party['name']}は{recover}回復した！")
-            else:
-                if combo >= 2:
-                    print(f"{combo}COMBO!")
-                damege=do_attack(party,monster,attack_element,mag)
-                print(f"{damege}のダメージを与えた！")
-            combo += 1
-        else:
-            break
-        
-# コンボ補正
-def combo_magnification(count,combo):
-    return 1.5**(count -3 + combo)
+# ダメージに乱数を入れる
+def blur_damage():
+    r = random.uniform(-10,10)
+    blur = (1+r/100)
+    return blur
+
+# 敵モンスターへのダメージを管理
+def do_attack(party,monster,attack_mons,element_mag,combo_mag):
+    
+    main_damage = party['my_monsters'][attack_mons]['ap'] - monster['dp']
+    element_damage = main_damage * element_mag
+    conbo_damage = element_damage * combo_mag
+    blur = blur_damage()
+    
+    damage = int(conbo_damage*blur)
+    if damage < 0:
+        damage = 1
+
+    monster['hp']=monster['hp']-damage
+
+    return damage
+
+# 敵モンスターのターン
+def on_enemy_turn(party,monster):
+    print(f"【{monster['name']}のターン】（HP={monster['hp']}）")
+    damage = do_enemy_attack(party,monster)
+    print(f"{damage}のダメージを受けた！")
+
+# 敵モンスターの攻撃を管理
+def do_enemy_attack(party,monster):
+    blur = blur_damage()
+    damage = int((monster['ap'] - party['DP'])*blur)
+    if damage <= 0:
+        damage = 1
+
+    party['HP']=party['HP']-damage
+
+    return damage
 
 # main関数の呼び出し
 main()
