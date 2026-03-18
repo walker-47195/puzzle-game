@@ -68,6 +68,15 @@ ELEMENT_BOOST = {
 
 # 関数宣言
 
+class Monster:
+    def __init__(self,name,hp,element,ap,dp):
+        self.name = name
+        self.max_hp = hp
+        self.hp = hp
+        self.element = element
+        self.ap = ap
+        self.dp = dp
+        
 # メイン関数
 def main():
     player = input('プレイヤー名を入力してください>>')
@@ -76,81 +85,19 @@ def main():
     print("")
 
     # 敵モンスターの生成
-    slime = {
-        'name':'スライム',
-        'hp':100,
-        'max_hp':100,
-        'element':'水',
-        'ap':10,
-        'dp':1
-    }
-    goblin = {
-        'name':'ゴブリン',
-        'hp':200,
-        'max_hp':200,
-        'element':'土',
-        'ap':20,
-        'dp':5
-    }
-    bigbat = {
-        'name':'オオコウモリ',
-        'hp':300,
-        'max_hp':300,
-        'element':'風',
-        'ap':30,
-        'dp':10
-    }
-    werewolf = {
-        'name':'ウェアウルフ',
-        'hp':400,
-        'max_hp':400,
-        'element':'風',
-        'ap':40,
-        'dp':15
-    }
-    doragon = {
-        'name':'ドラゴン',
-        'hp':600,
-        'max_hp':600,
-        'element':'火',
-        'ap':50,
-        'dp':20
-    }
+    slime = Monster('スライム',100,'水',10,1)
+    goblin = Monster('ゴブリン',200,'土',20,5)
+    bigbat = Monster('オオコウモリ',300,'風',30,10)
+    werewolf = Monster('ウェアウルフ',400,'風',40,15)
+    doragon = Monster('ドラゴン',600,'火',50,20)
+
     monsters_list=[slime,goblin,bigbat,werewolf,doragon]
 
     # 味方モンスターの生成
-    suzaku = {
-        'name':'朱雀',
-        'hp':150,
-        'max_hp':150,
-        'element':'火',
-        'ap':50,
-        'dp':10
-    }
-    genbu = {
-        'name':'玄武',
-        'hp':150,
-        'max_hp':150,
-        'element':'水',
-        'ap':40,
-        'dp':15
-    }
-    seiryu = {
-        'name':'青龍',
-        'hp':150,
-        'max_hp':150,
-        'element':'風',
-        'ap':30,
-        'dp':10
-    }
-    byakko = {
-        'name':'白虎',
-        'hp':150,
-        'max_hp':150,
-        'element':'土',
-        'ap':40,
-        'dp':5
-    }
+    suzaku = Monster('朱雀',150,'火',50,10)
+    genbu = Monster('玄武',150,'水',40,15)
+    seiryu = Monster('青龍',150,'風',30,10)
+    byakko = Monster('白虎',150,'土',40,5)
     
     friends = [suzaku,genbu,seiryu,byakko]
 
@@ -170,9 +117,9 @@ def organize_party(player_name,friends):
     max_hp = 0
     max_dp = 0
     for i in friends:
-        hp += i['hp']
-        max_hp += i['max_hp']
-        max_dp += i['dp']
+        hp += i.hp
+        max_hp += i.max_hp
+        max_dp += i.dp
     
     ave_dp = int(max_dp/len(friends))
 
@@ -214,7 +161,7 @@ def show_party(party):
     print('＜パーティ編成＞')
     for i in party['my_monsters']:
         print_monster_name(i)
-        print(f" HP={i['hp']} 攻撃={i['ap']} DP={i['dp']}")
+        print(f" HP={i.hp} 攻撃={i.ap} DP={i.dp}")
 
 # バトルをする
 def do_battle(party,monster):
@@ -225,7 +172,7 @@ def do_battle(party,monster):
     while True:
         on_player_turn(party,monster,label,element)
 
-        if monster['hp'] <= 0:
+        if monster.hp <= 0:
             print_monster_name(monster)
             print("を倒した！")
             flag = 1
@@ -241,9 +188,9 @@ def do_battle(party,monster):
 
 # モンスター名を属性付きで表示
 def print_monster_name(monster):
-    monster_name = monster['name']
-    symbol = ELEMENT_SYMBOLS[monster['element']]
-    color = ELEMENT_COLORS[monster['element']]
+    monster_name = monster.name
+    symbol = ELEMENT_SYMBOLS[monster.element]
+    color = ELEMENT_COLORS[monster.element]
 
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
@@ -273,7 +220,7 @@ def on_player_turn(party,monster,label,element):
 def show_battle_field(party,monster,label,element):
     print("バトルフィールド")
     print_monster_name(monster)
-    print(f"HP= {monster['hp']}/{monster['max_hp']}")
+    print(f"HP= {monster.hp}/{monster.max_hp}")
     for i in party['my_monsters']:
         print_monster_name(i)
     print("")
@@ -303,9 +250,9 @@ def all_attack(party,monster,label,element):
                 print(f"{party['name']}は{recover}回復した！")
             else:
                 attack_mons,element_name = attack_monster(attack_element)
-                element_mag = ELEMENT_BOOST[element_name + monster['element']]
+                element_mag = ELEMENT_BOOST[element_name + monster.element]
                 damage = do_attack(party,monster,attack_mons,element_mag,combo_mag)
-                print(f"{party['my_monsters'][attack_mons]['name']}の攻撃！")
+                print(f"{party['my_monsters'][attack_mons].name}の攻撃！")
                 if element_mag == 2.0:
                     print("効果は抜群だ！")
                 elif element_mag == 0.5:
@@ -439,7 +386,7 @@ def blur_damage():
 # 敵モンスターへのダメージを管理
 def do_attack(party,monster,attack_mons,element_mag,combo_mag):
     
-    main_damage = party['my_monsters'][attack_mons]['ap'] - monster['dp']
+    main_damage = party['my_monsters'][attack_mons].ap - monster.dp
     element_damage = main_damage * element_mag
     conbo_damage = element_damage * combo_mag
     blur = blur_damage()
@@ -448,20 +395,20 @@ def do_attack(party,monster,attack_mons,element_mag,combo_mag):
     if damage < 0:
         damage = 1
 
-    monster['hp']=monster['hp']-damage
+    monster.hp = monster.hp-damage
 
     return damage
 
 # 敵モンスターのターン
 def on_enemy_turn(party,monster):
-    print(f"【{monster['name']}のターン】（HP={monster['hp']}）")
+    print(f"【{monster.name}のターン】（HP={monster.hp}）")
     damage = do_enemy_attack(party,monster)
     print(f"{damage}のダメージを受けた！")
 
 # 敵モンスターの攻撃を管理
 def do_enemy_attack(party,monster):
     blur = blur_damage()
-    damage = int((monster['ap'] - party['DP'])*blur)
+    damage = int((monster.ap - party['DP']) * blur)
     if damage <= 0:
         damage = 1
 
