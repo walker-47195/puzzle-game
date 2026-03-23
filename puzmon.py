@@ -98,6 +98,81 @@ class Party:
         self.hp = self.max_hp
         self.dp = int(sum(m.dp for m in monsters)/len(monsters)) """
         
+class Battle:
+    def __init__(self,party,monster):
+        self.party = party
+        self.monster = monster
+
+    # バトルをする
+    def do_battle(self):
+        print_monster_name(self.monster)
+        print("が現れた！")
+        print("")
+        label,element = fill_gems()
+        while True:
+            self.on_player_turn(self.party,self.monster,label,element)
+
+            if self.monster.hp <= 0:
+                print_monster_name(self.monster)
+                print("を倒した！")
+                flag = 1
+                break
+
+            self.on_enemy_turn(self.party,self.monster)
+            
+            if self.party.hp <= 0:
+                flag = 0
+                break
+
+        return flag
+    
+    # プレイヤーのターン
+    def on_player_turn(self,party,monster,label,element):
+        print(f"【{party.name}のターン】（HP={party.hp}）")
+        
+        show_battle_field(party,monster,label,element)
+        
+        self.all_attack(party,monster,label,element)
+
+    # 敵モンスターのターン
+    def on_enemy_turn(self,party,monster):
+        print(f"【{monster.name}のターン】（HP={monster.hp}）")
+        damage = do_enemy_attack(party,monster)
+        print(f"{damage}のダメージを受けた！")
+
+    # 1回の攻撃をまとめて処理する
+    def all_attack(self,party,monster,label,element):
+        combo = 1
+        count = 0
+        command = check_valid_command(label)
+        move_gem(command,label,element)
+        while True:
+            last_num,count = check_banishable(element)
+            combo_mag = combo_magnification(count,combo)
+            if count >= 3:
+                attack_element = element[last_num]
+                banish_gems(element,last_num,count)
+                shift_gems(element,last_num,count)
+                spawn_gems(element,count)
+                if combo >= 2:
+                    print(f"{combo}COMBO!")
+                if attack_element == '&':
+                    recover = do_recover(party,combo_mag)
+                    print(f"{party.name}は{recover}回復した！")
+                else:
+                    attack_mons,element_name = attack_monster(attack_element)
+                    element_mag = ELEMENT_BOOST[element_name + monster.element]
+                    damage = do_attack(party,monster,attack_mons,element_mag,combo_mag)
+                    print(f"{party.monsters[attack_mons].name}の攻撃！")
+                    if element_mag == 2.0:
+                        print("効果は抜群だ！")
+                    elif element_mag == 0.5:
+                        print("効果はいまひとつのようだ...")
+                    print(f"{damage}のダメージを与えた！")
+                combo += 1
+            else:
+                break
+
 # メイン関数
 def main():
     player = input('プレイヤー名を入力してください>>')
@@ -143,7 +218,7 @@ def go_dungeon(party,monsters):
     print()
 
     for i in monsters:
-        is_win = do_battle(party,i)
+        is_win = Battle(party,i).do_battle()
         if is_win == 1:
             knock_down += 1
             print(f"{party.name}はさらに奥へと進んだ")
@@ -162,28 +237,7 @@ def show_party(party):
         print_monster_name(i)
         print(f" HP={i.hp} 攻撃={i.ap} DP={i.dp}")
 
-# バトルをする
-def do_battle(party,monster):
-    print_monster_name(monster)
-    print("が現れた！")
-    print("")
-    label,element = fill_gems()
-    while True:
-        on_player_turn(party,monster,label,element)
 
-        if monster.hp <= 0:
-            print_monster_name(monster)
-            print("を倒した！")
-            flag = 1
-            break
-
-        on_enemy_turn(party,monster)
-        
-        if party.hp <= 0:
-            flag = 0
-            break
-
-    return flag
 
 # モンスター名を属性付きで表示
 def print_monster_name(monster):
@@ -207,14 +261,6 @@ def fill_gems():
 
     return label,element
 
-# プレイヤーのターン
-def on_player_turn(party,monster,label,element):
-    print(f"【{party.name}のターン】（HP={party.hp}）")
-    
-    show_battle_field(party,monster,label,element)
-    
-    all_attack(party,monster,label,element)
-
 # バトルフィールドを生成
 def show_battle_field(party,monster,label,element):
     print("バトルフィールド")
@@ -228,38 +274,7 @@ def show_battle_field(party,monster,label,element):
     print(label)
     print(element)
 
-# 1回の攻撃をまとめて処理する
-def all_attack(party,monster,label,element):
-    combo = 1
-    count = 0
-    command = check_valid_command(label)
-    move_gem(command,label,element)
-    while True:
-        last_num,count = check_banishable(element)
-        combo_mag = combo_magnification(count,combo)
-        if count >= 3:
-            attack_element = element[last_num]
-            banish_gems(element,last_num,count)
-            shift_gems(element,last_num,count)
-            spawn_gems(element,count)
-            if combo >= 2:
-                print(f"{combo}COMBO!")
-            if attack_element == '&':
-                recover = do_recover(party,combo_mag)
-                print(f"{party.name}は{recover}回復した！")
-            else:
-                attack_mons,element_name = attack_monster(attack_element)
-                element_mag = ELEMENT_BOOST[element_name + monster.element]
-                damage = do_attack(party,monster,attack_mons,element_mag,combo_mag)
-                print(f"{party.monsters[attack_mons].name}の攻撃！")
-                if element_mag == 2.0:
-                    print("効果は抜群だ！")
-                elif element_mag == 0.5:
-                    print("効果はいまひとつのようだ...")
-                print(f"{damage}のダメージを与えた！")
-            combo += 1
-        else:
-            break
+
 
 # 入力されたコマンドを確認
 def check_valid_command(label):
@@ -398,11 +413,7 @@ def do_attack(party,monster,attack_mons,element_mag,combo_mag):
 
     return damage
 
-# 敵モンスターのターン
-def on_enemy_turn(party,monster):
-    print(f"【{monster.name}のターン】（HP={monster.hp}）")
-    damage = do_enemy_attack(party,monster)
-    print(f"{damage}のダメージを受けた！")
+
 
 # 敵モンスターの攻撃を管理
 def do_enemy_attack(party,monster):
