@@ -102,15 +102,16 @@ class Battle:
     def __init__(self,party,monster):
         self.party = party
         self.monster = monster
+        self.board = Board()
 
     # バトルをする
     def do_battle(self):
         print_monster_name(self.monster)
         print("が現れた！")
         print("")
-        label,element = fill_gems()
+
         while True:
-            self.on_player_turn(self.party,self.monster,label,element)
+            self.on_player_turn(self.party,self.monster)
 
             if self.monster.hp <= 0:
                 print_monster_name(self.monster)
@@ -127,12 +128,12 @@ class Battle:
         return flag
     
     # プレイヤーのターン
-    def on_player_turn(self,party,monster,label,element):
+    def on_player_turn(self,party,monster):
         print(f"【{party.name}のターン】（HP={party.hp}）")
         
-        show_battle_field(party,monster,label,element)
+        show_battle_field(party,monster,self.board.labels,self.board.elements)
         
-        self.all_attack(party,monster,label,element)
+        self.all_attack(party,monster)
 
     # 敵モンスターのターン
     def on_enemy_turn(self,party,monster):
@@ -141,19 +142,23 @@ class Battle:
         print(f"{damage}のダメージを受けた！")
 
     # 1回の攻撃をまとめて処理する
-    def all_attack(self,party,monster,label,element):
+    def all_attack(self,party,monster):
         combo = 1
         count = 0
-        command = check_valid_command(label)
-        move_gem(command,label,element)
+        command = check_valid_command(self.board.labels)
+
+        l_index = self.board.labels.index(command[0])
+        r_index = self.board.labels.index(command[1])
+        self.board.swap_gem(l_index,r_index)
+
         while True:
-            last_num,count = check_banishable(element)
+            last_num,count = self.board.check_banishable()
             combo_mag = combo_magnification(count,combo)
             if count >= 3:
-                attack_element = element[last_num]
-                banish_gems(element,last_num,count)
-                shift_gems(element,last_num,count)
-                spawn_gems(element,count)
+                attack_element = self.board.elements[last_num]
+                banish_gems(self.board.elements,last_num,count)
+                self.board.shift_gems(last_num,count)
+                self.board.spawn_gems(count)
                 if combo >= 2:
                     print(f"{combo}COMBO!")
                 if attack_element == '&':
@@ -172,6 +177,67 @@ class Battle:
                 combo += 1
             else:
                 break
+
+class Board:
+    def __init__(self):
+        self.labels = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
+        self.elements = self.fill_gems()
+        
+    # 宝石を生成
+    def fill_gems(self):
+        gems = []
+        for i in range(14):
+            gems.append(random.randint(0,4))
+
+        element = []
+        for num in gems:
+            element.append(ELEMENT_NUMBER[num])
+
+        return element
+    
+    # 宝石を移動させる
+    def swap_gem(self,l_index,r_index):
+        r = r_index-l_index
+        for i in range(abs(r)):
+            if r > 0:
+                self.elements[l_index+i], self.elements[l_index+1+i] = self.elements[l_index+1+i], self.elements[l_index+i]
+                print(self.elements)
+            else:
+                self.elements[l_index-1-i], self.elements[l_index-i] = self.elements[l_index-i], self.elements[l_index-1-i]
+                print(self.elements)
+
+    # 宝石の並びを調べて消去可能な個所を検索して返す
+    def check_banishable(self):
+        count = 1
+        last_num = 0
+        for i in range(1,len(self.elements)):
+            if self.elements[i] == self.elements[i-1]:
+                count += 1
+            else:
+                if count >= 3:
+                    last_num = i-1
+                    return last_num,count
+                else:
+                    count = 1
+
+        if count >= 3:
+            last_num = len(self.elements)-1
+            return last_num,count
+        return None,0
+    
+    # 空スロットの右側に並ぶ宝石を左詰めする
+    def shift_gems(self,last_num,count):
+        for x in range(count):
+            for i in range(len(self.elements)-last_num-1):
+                self.elements[last_num+i], self.elements[last_num+1+i] = self.elements[last_num+1+i], self.elements[last_num+i]
+            last_num -= 1
+
+    # 空スロットにランダムな宝石を生成する
+    def spawn_gems(self,count):
+        for i in range(count):
+            self.elements[-1-i] = ELEMENT_NUMBER[random.randint(0,4)]
+        print(self.elements)
+
 
 # メイン関数
 def main():
@@ -247,19 +313,7 @@ def print_monster_name(monster):
 
     print(f'\033[{color}m{symbol}{monster_name}{symbol}\033[0m ',end='')
 
-# 宝石を生成
-def fill_gems():
-    gems = []
-    for i in range(14):
-        gems.append(random.randint(0,4))
 
-    element = []
-    for num in gems:
-        element.append(ELEMENT_NUMBER[num])
-
-    label=['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
-
-    return label,element
 
 # バトルフィールドを生成
 def show_battle_field(party,monster,label,element):
@@ -304,43 +358,6 @@ def is_unique(command):
         check_box.append(char)
     return True
 
-# 動かす宝石のインデックスを確認
-def move_gem(com,label,element):
-    l_index = label.index(com[0])
-    r_index = label.index(com[1])
-
-    swap_gem(element,l_index,r_index)
-
-# 宝石を移動させる
-def swap_gem(element,l_index,r_index):
-    r = r_index-l_index
-    for i in range(abs(r)):
-        if r > 0:
-            element[l_index+i], element[l_index+1+i] = element[l_index+1+i], element[l_index+i]
-            print(element)
-        else:
-            element[l_index-1-i], element[l_index-i] = element[l_index-i], element[l_index-1-i]
-            print(element)
-
-# 宝石の並びを調べて消去可能な個所を検索して返す
-def check_banishable(element):
-    count = 1
-    last_num = 0
-    for i in range(1,len(element)):
-        if element[i] == element[i-1]:
-            count += 1
-        else:
-            if count >= 3:
-                last_num = i-1
-                return last_num,count
-            else:
-                count = 1
-
-    if count >= 3:
-        last_num = len(element)-1
-        return last_num,count
-    return None,0
-
 # コンボ補正
 def combo_magnification(count,combo):
     return 1.5**(count -3 + combo)
@@ -349,19 +366,6 @@ def combo_magnification(count,combo):
 def banish_gems(element,last_num,count):
     for i in range(count):
         element[last_num-i] = " "
-    print(element)
-
-# 空スロットの右側に並ぶ宝石を左詰めする
-def shift_gems(element,last_num,count):
-    for x in range(count):
-        for i in range(len(element)-last_num-1):
-            element[last_num+i], element[last_num+1+i] = element[last_num+1+i], element[last_num+i]
-        last_num -= 1
-
-# 空スロットにランダムな宝石を生成する
-def spawn_gems(element,count):
-    for i in range(count):
-        element[-1-i] = ELEMENT_NUMBER[random.randint(0,4)]
     print(element)
 
 # '命'の属性で回復する
